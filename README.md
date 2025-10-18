@@ -35,7 +35,8 @@ Lab at the University of Richmond and can be accessed [here]("https://dsl.richmo
 1. Ellis-Soto, D., Chapman, M., & Locke, D. H. (2023). Historical redlining is associated with increasing geographical disparities in bird       biodiversity sampling in the United States. Nature Human Behaviour, 1-9
 
 2. Robert K. Nelson, LaDale Winling, Richard Marciano, Nathan Connolly, et al., “Mapping Inequality,” American Panorama, ed. Robert K. Nelson and Edward L. Ayers, accessed October 17, 2023, https://dsl.richmond.edu/panorama/redlining/
-U.S. Environmental Protection Agency (EPA), 2024. EJScreen Technical Documentation.
+   
+3. U.S. Environmental Protection Agency (EPA), 2024. EJScreen Technical Documentation.
 
 
 
