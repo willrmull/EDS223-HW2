@@ -1,0 +1,202 @@
+---
+title: "Homework Assignment 1 EDS 223"
+format: 
+  pdf:
+    theme: Flatly   
+editor: visual
+---
+
+---
+title: Redlining's Environmental Impact in Los Angeles
+author: William Mullins
+date: 10-17-2025
+---
+
+### Load in Required Packages
+***
+```{r, echo=TRUE, message=FALSE}
+# Check if required packages are installed
+reqired_packages <- c("sf", "tmap", "tidyverse", "here", "knitr", "patchwork", "paletteer")
+
+for(pkg in reqired_packages){
+  if (!require(pkg, character.only = TRUE)){
+     stop(paste0("Package '", pkg, "' is not installed"))
+  } 
+}
+
+# Load required packages
+suppressPackageStartupMessages({
+  library(sf)
+  library(tmap)
+  library(tidyverse)
+  library(here)
+  library(knitr)
+  library(patchwork)
+  library(paletteer)
+})
+```
+
+### Reading in Data
+***
+```{r, echo=TRUE, results='hide'}
+# EJScreen Data
+ejscreen <- sf::st_read(here::here("data","ejscreen","EJSCREEN_2023_BG_StatePct_with_AS_CNMI_GU_VI.gdb")) 
+
+# Redlining Data
+redlining <- sf::st_read(here::here("data","mapping-inequality","mapping-inequality-los-angeles.json"))
+
+# Bird observations in LA County
+birds <- sf::st_read(here::here("data", "gbif-birds-LA", "gbif-birds-LA.shp"))
+
+# Check if the geometry of objects match & change if false
+if (st_crs(birds) != st_crs(ejscreen)) {
+  birds <- st_transform(birds, crs = st_crs(ejscreen)) 
+}
+if (st_crs(redlining) != st_crs(ejscreen)) {
+  redlining <- st_transform(redlining, crs = st_crs(ejscreen))
+}
+
+# Data for map visualization
+ejscreen_subset <- ejscreen %>% 
+  filter(ST_ABBREV == c('CA'),
+         CNTY_NAME %in% c("Los Angeles County", 
+                          "Orange County"))
+
+# LA County data from ejscreen
+los_angeles <- ejscreen_subset %>% filter(CNTY_NAME == "Los Angeles County")
+
+```
+
+### Map of Redlining in Los Angeles Census Blocks
+***
+```{r, warning = FALSE}
+# Map area
+custom_bbox <- c(xmin = -118.65,
+                 ymin = 33.7,
+                 xmax = -117.7,
+                 ymax = 34.31)
+
+# Color Palette for grades
+custom_palette <- c("#939E63", "#8A9D9B", "#D3B869","#BF7A80")
+
+# Map of Redlining in Los Angeles County
+tm_shape(redlining, bbox = custom_bbox) + 
+  tm_graticules(crs = 4326, labels.show = TRUE) +
+  tm_polygons("grade",
+              fill.legend = tm_legend(title = "HOLC Grade", title.size = .60, text.size = .55),
+              fill.scale = tm_scale(
+                values = custom_palette,
+                labels = c("A FIRST GRADE", "B SECIND GRADE",  "C THIRD GRADE", "D FOURTH GRADE"), # Labels on Legend
+                label.na = "NO GRADE", # Change default na label
+                orientation = "portrait")) +
+  tm_layout(legend.position = tm_pos_in(pos.h = 0.025, pos.v = 0.35),
+            legend.width = 6,
+            legend.height = 7.5) +
+  tm_title(text = "Redlining in Los Angeles Census Blocks") +
+  tm_shape(ejscreen_subset) +
+  tm_borders(lwd = .3) +
+  tm_options(component.autoscale = FALSE)
+```
+### Summary Table of Redlining Data
+***
+```{r}
+# Join LA and redlining data
+joined_data <- st_join(redlining, los_angeles) %>% 
+  st_drop_geometry() # Drop geometry 
+
+# Give NA values in grade column a label
+joined_data$grade[is.na(joined_data$grade)] <- "None"
+
+#........................KABLE.........................
+# Table showing the percent of  blocks in each grade
+summary_data <- joined_data %>%
+  group_by(grade) %>%
+  summarise(BlockCount = n()) %>% # Total count of blocks in LA
+  mutate(percent = BlockCount/sum(BlockCount) * 100) %>% # Count at each site / Total
+  kable(col.names = c("HOLC Grade", "Count", "Percent in Grade"), 
+        align = 'c', # Center text
+        caption = "Percent of Blocks in Each HLOC Grade", # Title
+        digits=3) # Limit to three decimal points 
+
+# Output
+summary_data
+```
+
+### Visualiztions of Current Observations
+***
+```{r}
+# Create data frame with mean values of:
+#   % Low Income
+#   Percentile for PM2.5
+#   Percentile for Low Life Expectancy
+# based on the HOLC Grade
+summary_data <- joined_data %>% 
+  group_by(grade) %>% # Group by grade
+  # Summarize for mean values
+  summarize(low_income = mean(LOWINCPCT, na.rm = TRUE)*100, # Convert to whole number 
+            particulate_matter = mean(P_D2_PM25, na.rm = TRUE),
+            life_expect = mean(P_LIFEEXPPCT, na.rm = TRUE))
+
+#........................Patchwork Plots.........................
+# Plot of Percent Low Income
+p1 <- ggplot(summary_data, aes(x = grade, y = low_income, fill = grade)) +
+  geom_col() +
+  labs(title = "Percent Low Income \nby HOLC Grade",
+       y = "Mean Percent Low Income",
+       x = "HOLC Grade") +
+  scale_fill_paletteer_d("nationalparkcolors::Acadia") # Color Palette
+
+# Plot of PM2.5 Percentile
+p2 <- ggplot(summary_data, aes(x = grade, y = particulate_matter, fill = grade)) +
+  geom_col() +
+  labs(title = "Percentile for Particulate \nMatter 2.5 by HOLC Grade",
+       y = "Mean Percentile for PM2.5",
+       x = "HOLC Grade") +
+  scale_fill_paletteer_d("nationalparkcolors::Acadia") # Color Palette
+
+# Plot of Low Life Expectancy Percentile
+p3 <- ggplot(summary_data, aes(x = grade, y = life_expect, fill = grade)) +
+  geom_col() +
+  labs(title = "Percentile for Low \nLife Expectancy by HOLC Grade",
+       y = "Mean Percentile for \nLow Life Expectancy",
+       x = "HOLC Grade") +
+  scale_fill_paletteer_d("nationalparkcolors::Acadia") # Color Palette
+
+# Merge Plots Horizontally
+p1 + p2 + p3 + plot_layout(guides = "collect", axes = "collect_x") &
+  theme(plot.title = element_text(size = 10)) # Resize plot titles
+``` 
+### Discussion
+***
+The bar charts above indicate that neighborhoods which were assigned lower HOLC grades have worse environmental and socioeconomic conditions than areas with higher grades. In all three graphs there is a consistent increase in the parameter of interest as the grade changes from A to D indicating that the stratification of the population caused by this grading can still be observed in the modern day. Additionally, neighborhoods which had no assigned grade tended to fall between the C and D grades on the bar graphs which indicates that they could have been indirectly affected by the redlining policies of the time. Overall, it seems that the inequality caused through redlining has been maintained despite its banning seventy years ago, showing the devistating long term impact these policies had.
+
+## Legacy of Redlining in Biodiversity Observations
+***
+```{r}
+if (st_crs(birds) != st_crs(redlining)) {
+  warning("CRS of objects do not match")
+}
+
+# Data frame with percent of bird observations at each site
+birds_joined <- st_join(redlining, birds, join = st_contains) %>% 
+  st_drop_geometry() %>% # Drop geometry since it's no longer needed
+    filter(!is.na(grade)) %>% # Remove grades with NA values 
+  group_by(grade) %>% 
+  summarize(percent_observed = n()) %>% # Get number of observations
+  mutate(percent = percent_observed/sum(percent_observed)) # Make new columns with percent of total
+
+# Bar plot of percent of bird observations at each HLOC site
+ggplot(birds_joined, aes(x = grade, y = percent, fill = grade)) +
+  geom_col() + 
+  # Label axis
+  labs(title = "Percent of Birds Observations at Each HOLC Grade",
+       y = "Percent of Observations",
+       x = "HOLC Grade") +
+  scale_fill_paletteer_d("nationalparkcolors::Acadia") # Color palette
+```
+### Discussion
+***
+Our findings differed from the paper's expectations: we found that areas in the C and D grade areas having a higher contribution to the total number of observations than A and B graded areas. This is likely due to the paper considering the density of sampling rather than the sheer number of samples, which is what we did. While C and D grade areas did have a higher number of observations, they also constitute a significantly higher percentage of Los Angeles total land area than A or B areas which can be seen in the map above.
+
+
+
