@@ -1,4 +1,6 @@
 data/
+.DS_Store
+.Rhistory
 
 # History files
 .Rhistory
