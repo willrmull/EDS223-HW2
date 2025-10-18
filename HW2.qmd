@@ -168,7 +168,7 @@ p1 + p2 + p3 + plot_layout(guides = "collect", axes = "collect_x") &
 ``` 
 ### Discussion
 ***
-The bar charts above indicate that neighborhoods which were assigned lower HOLC grades have worse environmental and socioeconomic conditions than areas with higher grades. In all three graphs there is a consistent increase in the parameter of interest as the grade changes from A to D indicating that the stratification of the population caused by this grading can still be observed in the modern day. Additionally, neighborhoods which had no assigned grade tended to fall between the C and D grades on the bar graphs which indicates that they could have been indirectly affected by the redlining policies of the time. Overall, it seems that the inequality caused through redlining has been maintained despite its banning seventy years ago, showing the devistating long term impact these policies had.
+The bar charts above indicate that neighborhoods that were assigned lower HOLC grades have worse environmental and socioeconomic conditions than areas with higher grades. In all three graphs, there is a consistent increase in the parameter of interest as the grade changes from A to D, indicating that the stratification of the population caused by this grading can still be observed in the modern day. Additionally, neighborhoods that had no assigned grade tended to fall between the C and D grades on the bar graphs, which indicates that they could have been indirectly affected by the redlining policies of the time. Overall, it seems that the inequality caused by redlining has been maintained despite its banning seventy years ago, showing the devastating long-term impact these policies had.
 
 ## Legacy of Redlining in Biodiversity Observations
 ***
@@ -196,7 +196,5 @@ ggplot(birds_joined, aes(x = grade, y = percent, fill = grade)) +
 ```
 ### Discussion
 ***
-Our findings differed from the paper's expectations: we found that areas in the C and D grade areas having a higher contribution to the total number of observations than A and B graded areas. This is likely due to the paper considering the density of sampling rather than the sheer number of samples, which is what we did. While C and D grade areas did have a higher number of observations, they also constitute a significantly higher percentage of Los Angeles total land area than A or B areas which can be seen in the map above.
-
-
+Our findings differed from the paper's expectations: we found that areas in the C and D grade areas had a higher contribution to the total number of observations than A and B graded areas. This is likely due to the paper considering the density of sampling rather than the sheer number of samples, which is what we did. While C and D grade areas did have a higher number of observations, they also constitute a significantly higher percentage of Los Angeles' total land area than A or B areas, which can be seen in the map above. Because of this, it's likely that if we created a new bar chart showing the sample count relative to area size, we would produce results matching their expectations.
 
